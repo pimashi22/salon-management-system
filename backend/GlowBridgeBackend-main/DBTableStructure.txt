@@ -1,0 +1,387 @@
+Table "public.appointment"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+user_id	uuid		not null	
+note	text		not null	
+service_id	uuid		not null	
+start_at	timestamp without time zone		not null	
+end_at	timestamp without time zone		not null	
+payment_type	text		not null	
+amount	double precision		not null	
+is_paid	boolean		not null	false
+created_at	timestamp without time zone		not null	now()
+updated_at	timestamp without time zone		not null	now()
+status	text			
+Indexes:
+"appointment_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"appointment_service_id_fkey" FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+"appointment_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+Index "public.appointment_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.appointment"
+
+Table "public.cart"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	gen_random_uuid()
+user_id	integer		not null	
+product_id	uuid		not null	
+quantity	integer		not null	1
+created_at	timestamp without time zone			CURRENT_TIMESTAMP
+updated_at	timestamp without time zone			CURRENT_TIMESTAMP
+Indexes:
+"cart_pkey" PRIMARY KEY, btree (id)
+"cart_user_id_product_id_key" UNIQUE CONSTRAINT, btree (user_id, product_id)
+Foreign-key constraints:
+"cart_product_id_fkey" FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+Index "public.cart_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.cart"
+
+Index "public.cart_user_id_product_id_key"
+Column	Type	Key?	Definition
+user_id	integer	yes	user_id
+product_id	uuid	yes	product_id
+unique, btree, for table "public.cart"
+
+Table "public.category"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('category_id_seq'::regclass)
+name	text		not null	
+description	text			
+is_active	boolean			true
+Indexes:
+"category_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+TABLE "service_category" CONSTRAINT "fk_category" FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE
+Sequence "public.category_id_seq"
+Type	Start	Minimum	Maximum	Increment	Cycles?	Cache
+integer	1	1	2147483647	1	no	1
+Owned by: public.category.id
+
+Index "public.category_pkey"
+Column	Type	Key?	Definition
+id	integer	yes	id
+primary key, btree, for table "public.category"
+
+Index "public.idx_user_firebase_uid"
+Column	Type	Key?	Definition
+firebase_uid	character varying(128)	yes	firebase_uid
+btree, for table "public.user"
+
+Table "public.order"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+user_id	uuid		not null	
+description	text			
+payment_type	text		not null	
+amount	double precision		not null	
+is_paid	boolean		not null	false
+Indexes:
+"order_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"order_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+Referenced by:
+TABLE "order_item" CONSTRAINT "order_item_order_id_fkey" FOREIGN KEY (order_id) REFERENCES "order"(id) ON DELETE CASCADE
+Table "public.order_item"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+order_id	uuid		not null	
+product_id	uuid		not null	
+quantity	integer		not null	
+price	numeric(10,2)		not null	
+created_at	timestamp without time zone			CURRENT_TIMESTAMP
+updated_at	timestamp without time zone			CURRENT_TIMESTAMP
+Indexes:
+"order_item_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"order_item_order_id_fkey" FOREIGN KEY (order_id) REFERENCES "order"(id) ON DELETE CASCADE
+"order_item_product_id_fkey" FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+Index "public.order_item_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.order_item"
+
+Index "public.order_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.order"
+
+Table "public.package"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+name	text		not null	
+description	text			
+is_public	boolean		not null	true
+discount	numeric(5,2)			0
+Indexes:
+"package_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+TABLE "package_service" CONSTRAINT "package_service_package_id_fkey" FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE CASCADE
+Index "public.package_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.package"
+
+Table "public.package_service"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+package_id	uuid		not null	
+service_id	uuid		not null	
+Indexes:
+"package_service_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"package_service_package_id_fkey" FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE CASCADE
+"package_service_service_id_fkey" FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+Index "public.package_service_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.package_service"
+
+Table "public.product"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+salon_id	uuid		not null	
+name	text		not null	
+description	text			
+price	integer		not null	
+available_quantity	integer		not null	
+is_public	boolean		not null	true
+discount	integer			0
+image_url	text			
+Indexes:
+"product_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"product_salon_id_fkey" FOREIGN KEY (salon_id) REFERENCES salon(id) ON DELETE CASCADE
+Referenced by:
+TABLE "cart" CONSTRAINT "cart_product_id_fkey" FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+TABLE "order_item" CONSTRAINT "order_item_product_id_fkey" FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+TABLE "product_feedback" CONSTRAINT "product_feedback_product_id_fkey" FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+Table "public.product_feedback"
+Column	Type	Collation	Nullable	Default
+user_id	uuid		not null	
+product_id	uuid		not null	
+comment	text		not null	
+rating	integer		not null	
+Indexes:
+"product_feedback_pkey" PRIMARY KEY, btree (user_id, product_id)
+Foreign-key constraints:
+"product_feedback_product_id_fkey" FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+"product_feedback_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+Index "public.product_feedback_pkey"
+Column	Type	Key?	Definition
+user_id	uuid	yes	user_id
+product_id	uuid	yes	product_id
+primary key, btree, for table "public.product_feedback"
+
+Index "public.product_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.product"
+
+Table "public.role"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+name	text		not null	
+Indexes:
+"role_pkey" PRIMARY KEY, btree (id)
+"role_name_key" UNIQUE CONSTRAINT, btree (name)
+Index "public.role_name_key"
+Column	Type	Key?	Definition
+name	text	yes	name
+unique, btree, for table "public.role"
+
+Index "public.role_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.role"
+
+Table "public.salon"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+name	text		not null	
+type	text		not null	
+bio	text		not null	
+location	text		not null	
+contact_number	text		not null	
+created_at	timestamp without time zone		not null	now()
+updated_at	timestamp without time zone		not null	now()
+status	text			'active'::text
+Indexes:
+"salon_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+"salon_status_check" CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text, 'pending'::text]))
+Referenced by:
+TABLE "salon_owner" CONSTRAINT "fk_salon" FOREIGN KEY (salon_id) REFERENCES salon(id) ON DELETE CASCADE
+TABLE "product" CONSTRAINT "product_salon_id_fkey" FOREIGN KEY (salon_id) REFERENCES salon(id) ON DELETE CASCADE
+TABLE "salon_staff" CONSTRAINT "salon_staff_salon_id_fkey" FOREIGN KEY (salon_id) REFERENCES salon(id) ON DELETE CASCADE
+TABLE "service" CONSTRAINT "service_salon_id_fkey" FOREIGN KEY (salon_id) REFERENCES salon(id) ON DELETE CASCADE
+Table "public.salon_owner"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+salon_id	uuid		not null	
+user_id	uuid		not null	
+Indexes:
+"salon_owner_pkey" PRIMARY KEY, btree (id)
+"unique_salon_owner" UNIQUE CONSTRAINT, btree (salon_id, user_id)
+Foreign-key constraints:
+"fk_salon" FOREIGN KEY (salon_id) REFERENCES salon(id) ON DELETE CASCADE
+"fk_user" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+Index "public.salon_owner_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.salon_owner"
+
+Index "public.salon_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.salon"
+
+Table "public.salon_staff"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+user_id	uuid		not null	
+salon_id	uuid		not null	
+Indexes:
+"salon_staff_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"salon_staff_salon_id_fkey" FOREIGN KEY (salon_id) REFERENCES salon(id) ON DELETE CASCADE
+"salon_staff_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+Referenced by:
+TABLE "staff_availability" CONSTRAINT "fk_salon_staff" FOREIGN KEY (salon_staff_id) REFERENCES salon_staff(id) ON DELETE CASCADE
+Index "public.salon_staff_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.salon_staff"
+
+Table "public.service"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+salon_id	uuid		not null	
+is_completed	boolean		not null	false
+name	text		not null	
+description	text		not null	
+duration	text		not null	
+price	integer			
+is_public	boolean		not null	
+discount	integer			0
+Indexes:
+"service_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"service_salon_id_fkey" FOREIGN KEY (salon_id) REFERENCES salon(id) ON DELETE CASCADE
+Referenced by:
+TABLE "appointment" CONSTRAINT "appointment_service_id_fkey" FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+TABLE "service_category" CONSTRAINT "fk_service" FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+TABLE "package_service" CONSTRAINT "package_service_service_id_fkey" FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+TABLE "service_feedback" CONSTRAINT "service_feedback_service_id_fkey" FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+Table "public.service_category"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('service_category_id_seq'::regclass)
+category_id	integer		not null	
+service_id	uuid		not null	
+Indexes:
+"service_category_pkey" PRIMARY KEY, btree (id)
+"unique_service_category" UNIQUE CONSTRAINT, btree (category_id, service_id)
+Foreign-key constraints:
+"fk_category" FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE
+"fk_service" FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+Sequence "public.service_category_id_seq"
+Type	Start	Minimum	Maximum	Increment	Cycles?	Cache
+integer	1	1	2147483647	1	no	1
+Owned by: public.service_category.id
+
+Index "public.service_category_pkey"
+Column	Type	Key?	Definition
+id	integer	yes	id
+primary key, btree, for table "public.service_category"
+
+Table "public.service_feedback"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	
+user_id	uuid		not null	
+service_id	uuid		not null	
+comment	text		not null	
+rating	integer		not null	
+Indexes:
+"service_feedback_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"service_feedback_service_id_fkey" FOREIGN KEY (service_id) REFERENCES service(id) ON DELETE CASCADE
+"service_feedback_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+Index "public.service_feedback_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.service_feedback"
+
+Index "public.service_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.service"
+
+Table "public.staff_availability"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+salon_staff_id	uuid		not null	
+day_of_week	integer		not null	
+start_time	time without time zone		not null	
+end_time	time without time zone		not null	
+is_available	boolean			true
+Indexes:
+"staff_availability_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+"day_of_week_check" CHECK (day_of_week >= 0 AND day_of_week <= 6)
+Foreign-key constraints:
+"fk_salon_staff" FOREIGN KEY (salon_staff_id) REFERENCES salon_staff(id) ON DELETE CASCADE
+Index "public.staff_availability_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.staff_availability"
+
+Index "public.unique_salon_owner"
+Column	Type	Key?	Definition
+salon_id	uuid	yes	salon_id
+user_id	uuid	yes	user_id
+unique, btree, for table "public.salon_owner"
+
+Index "public.unique_service_category"
+Column	Type	Key?	Definition
+category_id	integer	yes	category_id
+service_id	uuid	yes	service_id
+unique, btree, for table "public.service_category"
+
+Table "public.user"
+Column	Type	Collation	Nullable	Default
+id	uuid		not null	uuid_generate_v4()
+first_name	text		not null	
+last_name	text		not null	
+email	text		not null	
+contact_number	text		not null	
+role	text		not null	'customer'::text
+firebase_uid	character varying(128)			
+Indexes:
+"user_pkey" PRIMARY KEY, btree (id)
+"idx_user_firebase_uid" btree (firebase_uid)
+"user_email_key" UNIQUE CONSTRAINT, btree (email)
+"user_firebase_uid_key" UNIQUE CONSTRAINT, btree (firebase_uid)
+Referenced by:
+TABLE "appointment" CONSTRAINT "appointment_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+TABLE "salon_owner" CONSTRAINT "fk_user" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+TABLE ""order"" CONSTRAINT "order_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+TABLE "product_feedback" CONSTRAINT "product_feedback_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+TABLE "salon_staff" CONSTRAINT "salon_staff_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+TABLE "service_feedback" CONSTRAINT "service_feedback_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
+Index "public.user_email_key"
+Column	Type	Key?	Definition
+email	text	yes	email
+unique, btree, for table "public.user"
+
+Index "public.user_firebase_uid_key"
+Column	Type	Key?	Definition
+firebase_uid	character varying(128)	yes	firebase_uid
+unique, btree, for table "public.user"
+
+Index "public.user_pkey"
+Column	Type	Key?	Definition
+id	uuid	yes	id
+primary key, btree, for table "public.user"
